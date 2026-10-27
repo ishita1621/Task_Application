@@ -1,0 +1,23 @@
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build files
+dist/
+**/dist/
+
+# Logs
+*.log
+
+
+# Automatically added AI tool skill files
+api/.agents/
+api/.claude/
+api/.cursor/
+api/.devin/
