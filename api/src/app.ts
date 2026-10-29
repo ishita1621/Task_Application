@@ -2,11 +2,15 @@ import express from "express";
 import cors from "cors";
 import requestLogger from "./middleware/requestLogger";
 import errorHandler from "./middleware/errorHandler";
+import authRoutes from "./routes/authRoutes"
 
 const app=express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/auth",authRoutes)
+
 
 app.use(requestLogger);
 
@@ -16,10 +20,6 @@ app.get("/",(req,res)=>{
         message:"backend Running",
     });
 });
-
-// app.get("/error-test", (req, res, next) => {
-//   next(new Error("Testing centralized error handling"));
-// });
 
 app.use(errorHandler);
 

@@ -21,3 +21,4 @@ api/.agents/
 api/.claude/
 api/.cursor/
 api/.devin/
+api/keys/private.pem
