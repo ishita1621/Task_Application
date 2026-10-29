@@ -17,7 +17,7 @@
     "@mui/x-data-grid": "^9.15.0",
     "@mui/x-data-grid-pro": "^9.15.0",
     "@mui/x-date-pickers": "^9.15.0",
-    "axios": "^1.20.0",
+    "axios": "^1.21.0",
     "dayjs": "^1.11.23",
     "formik": "^2.4.9",
     "react": "^19.2.8",

@@ -4,11 +4,13 @@ import AppTextField from "../components/common/AppTextField";
 import AppButton from "../components/common/AppButton"
 import Typography from "@mui/material/Typography";
 import AppBox from "../components/common/AppBox"
-import { authenticateUser } from "../services/AuthStorage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { useState } from "react";
+import { loginUser } from "../services/AuthApi";
+import AppLoader from "../components/common/AppLoader";
+import { encryptPassword } from "../utils/encryptPassword";
 
 const loginSchema = Yup.object({
     email: Yup.string()
@@ -32,6 +34,9 @@ type LoginFormValues = {
 
 export default function Login() {
     const [successOpen, setSuccessOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorOpen, setErrorOpen] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
     const formik = useFormik<LoginFormValues>({
         initialValues: {
@@ -40,26 +45,50 @@ export default function Login() {
         },
         validationSchema: loginSchema,
 
-        onSubmit: (values, { setStatus, setSubmitting, resetForm }) => {
-            const isAuthenticated = authenticateUser(
-                values.email,
-                values.password
-            );
-            if (!isAuthenticated) {
-                setStatus("Invalid credentials");
-                setSubmitting(false);
-                return;
-            }
-            setStatus(undefined);
-            localStorage.setItem("isAuthenticated", "true");
-            resetForm();
-            setSuccessOpen(true);
-            setSubmitting(false);
 
-            setTimeout(() => {
-                navigate("/dashboard");
-            }, 1500);
+        onSubmit: async (values, { setStatus, setSubmitting, resetForm }) => {
+            try {
+                setStatus(undefined);
+
+                // Encrypt password before sending it to backend
+                const encryptedPassword = await
+                    encryptPassword(values.password);
+
+                // Send encrypted password
+                const result = await loginUser({
+                    email: values.email,
+                    encryptedPassword,
+                });
+
+                console.log("Login response:", result);
+                console.log("User:", result.user);
+
+
+
+                // Save user details
+                localStorage.setItem("user", JSON.stringify(result.user));
+
+
+                setSuccessMessage("Login successful! Redirecting to dashboard...");
+                setSuccessOpen(true);
+                setTimeout(() => {
+                    navigate("/dashboard");
+                    // resetForm();
+                }, 1500);
+
+            } catch (error) {
+                setErrorMessage(
+                    error instanceof Error
+                        ? error.message
+                        : "Invalid email or password"
+                );
+
+                setErrorOpen(true);
+            } finally {
+                setSubmitting(false);
+            }
         },
+
     });
 
     return (
@@ -85,7 +114,7 @@ export default function Login() {
             >
                 <Typography
                     variant="h4"
-                    sx={{ mb: 1, textAlign:"center",fontWeight:700 }}
+                    sx={{ mb: 1, textAlign: "center", fontWeight: 700 }}
                 >
                     Log In
                 </Typography>
@@ -93,7 +122,7 @@ export default function Login() {
                 <Typography
                     variant="body2"
                     color="text.secondary"
-                    sx={{ mb: 2 , textAlign:"center"}}
+                    sx={{ mb: 2, textAlign: "center" }}
                 >
                     Welcome back! Please enter your details.
                 </Typography>
@@ -101,6 +130,7 @@ export default function Login() {
                 <form onSubmit={formik.handleSubmit}>
                     <AppTextField
                         label="Email address"
+                        required
                         type="email"
                         {...formik.getFieldProps("email")}
                         error={formik.touched.email && Boolean(formik.errors.email)}
@@ -111,6 +141,7 @@ export default function Login() {
 
                     <AppTextField
                         label="Password"
+                        required
                         type="password"
                         {...formik.getFieldProps("password")}
                         error={
@@ -121,15 +152,12 @@ export default function Login() {
                         }
 
                     />
-                    {formik.status && (
-                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                            {formik.status}
-                        </Typography>
-                    )}
+
 
                     <AppBox sx={{ display: "flex", justifyContent: "center", }}>
                         <AppButton
                             type="submit"
+                            disabled={formik.isSubmitting}
                             sx={{
                                 width: "100%",
                                 py: 1.3,
@@ -139,9 +167,34 @@ export default function Login() {
                                 fontWeight: 600,
                             }}
                         >
-                            Log In
+                            {formik.isSubmitting ? (
+                                <AppLoader size={20} />
+                            ) : (
+                                "Log In"
+                            )}
                         </AppButton>
+
                     </AppBox>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            mt: 2,
+                            textAlign: "center",
+                            color: "text.secondary",
+                        }}
+                    >
+                        Don't have an account?{" "}
+                        <Link
+                            to="/signup"
+                            style={{
+                                color: "#1976d2",
+                                fontWeight: 600,
+                                textDecoration: "none",
+                            }}
+                        >
+                            Create account
+                        </Link>
+                    </Typography>
                 </form>
             </AppBox>
             <Snackbar
@@ -156,7 +209,22 @@ export default function Login() {
                     onClose={() => setSuccessOpen(false)}
                     sx={{ width: "100%" }}
                 >
-                    Login successful! Welcome back.
+                    {successMessage}
+                </Alert>
+            </Snackbar>
+            <Snackbar
+                open={errorOpen}
+                autoHideDuration={3000}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                onClose={() => setErrorOpen(false)}
+            >
+                <Alert
+                    severity="error"
+                    variant="filled"
+                    onClose={() => setErrorOpen(false)}
+                    sx={{ width: "100%" }}
+                >
+                    {errorMessage}
                 </Alert>
             </Snackbar>
         </AppBox>

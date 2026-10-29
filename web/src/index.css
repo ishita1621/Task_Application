@@ -1,0 +1,11 @@
+/* Hide Edge and Internet Explorer native password controls */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
+/* Hide browser-provided password reveal controls where supported */
+input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+}

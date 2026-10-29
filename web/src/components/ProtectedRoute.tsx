@@ -1,11 +1,12 @@
-import {Navigate,Outlet} from "react-router-dom"
 
-export default function ProtectedRoute(){
-    const isAuthenticated=localStorage.getItem("isAuthenticated")==="true";
+import { Navigate, Outlet } from "react-router-dom";
 
-    if(!isAuthenticated){
+export default function ProtectedRoute() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
         return <Navigate to="/login" replace />;
-
     }
-    return <Outlet />; //RETURN TO NESTED ROUTE INSIDE THE PROTECTED ROUTE
+
+    return <Outlet />;
 }
