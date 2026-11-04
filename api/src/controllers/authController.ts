@@ -10,17 +10,21 @@ export async function signup(req: Request, res: Response) {
             middleName,
             lastName,
             email,
-            password,
-            confirmPassword,
+            password: encryptedPassword,
+            confirmPassword: encryptedConfirmPassword,
         } = req.body;
-
         // Basic validation
         if (
-            !firstName?.trim() ||
-            !lastName?.trim() ||
-            !email?.trim() ||
-            !password ||
-            !confirmPassword
+            typeof firstName !== "string" ||
+            !firstName.trim() ||
+            typeof lastName !== "string" ||
+            !lastName.trim() ||
+            typeof email !== "string" ||
+            !email.trim() ||
+            typeof encryptedPassword !== "string" ||
+            !encryptedPassword ||
+            typeof encryptedConfirmPassword !== "string" ||
+            !encryptedConfirmPassword
         ) {
             return res.status(400).json({
                 success: false,
@@ -28,6 +32,22 @@ export async function signup(req: Request, res: Response) {
             });
         }
 
+        let password: string;
+        let confirmPassword: string;
+
+        try {
+            password = decryptPassword(encryptedPassword);
+            confirmPassword = decryptPassword(encryptedConfirmPassword);
+        } catch (error) {
+            console.error("Password decryption failed:", error);
+
+            return res.status(400).json({
+                success: false,
+                message: "Unable to decrypt password",
+            });
+        }
+
+        // Compare decrypted passwords
         if (password !== confirmPassword) {
             return res.status(400).json({
                 success: false,
@@ -35,6 +55,7 @@ export async function signup(req: Request, res: Response) {
             });
         }
 
+        // Validate decrypted password length
         if (password.length < 8) {
             return res.status(400).json({
                 success: false,
@@ -43,10 +64,13 @@ export async function signup(req: Request, res: Response) {
         }
 
         const user = await signupUser({
-            firstName,
-            middleName,
-            lastName,
-            email,
+            firstName: firstName.trim(),
+            middleName:
+                typeof middleName === "string"
+                    ? middleName.trim()
+                    : undefined,
+            lastName: lastName.trim(),
+            email: email.trim().toLowerCase(),
             password,
         });
 
@@ -56,7 +80,10 @@ export async function signup(req: Request, res: Response) {
             user,
         });
     } catch (error) {
-        if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
+        if (
+            error instanceof Error &&
+            error.message === "EMAIL_ALREADY_EXISTS"
+        ) {
             return res.status(409).json({
                 success: false,
                 message: "This email is already registered",
@@ -73,6 +100,9 @@ export async function signup(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
+    console.log("Login body:", req.body);
+    console.log("Email:", req.body?.email);
+    console.log("Password exists:", Boolean(req.body?.password));
     try {
         const { email, encryptedPassword } = req.body;
 
@@ -93,6 +123,7 @@ export async function login(req: Request, res: Response) {
 
         try {
             password = decryptPassword(encryptedPassword);
+            console.log("Decrypted password length:", password.length);
         } catch (error) {
             console.error("Password decryption failed");
 

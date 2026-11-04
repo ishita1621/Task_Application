@@ -9,7 +9,21 @@
 * 🟢 You can import this file directly.
 */
 
+export const TaskPriority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH'
+} as const
+
+export type TaskPriority = (typeof TaskPriority)[keyof typeof TaskPriority]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const TaskStatus = {
+  OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
+  IMPLEMENTED: 'IMPLEMENTED',
+  RE_OPENED: 'RE_OPENED',
+  CLOSED: 'CLOSED'
+} as const
+
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus]

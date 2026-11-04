@@ -12,6 +12,7 @@ import AppBox from "../components/common/AppBox";
 import { signupUser } from "../services/AuthApi";
 import { useNavigate } from "react-router-dom";
 import AppLoader from "../components/common/AppLoader";
+import { encryptPassword } from "../utils/encryptPassword";
 
 // Validation for personal details
 const personalDetailsSchema = Yup.object({
@@ -59,8 +60,18 @@ const passwordSchema = Yup.object({
 
     confirmPassword: Yup.string()
         .required("Please confirm your password")
-        .oneOf([Yup.ref("password")], "Passwords do not match"),
+        .test(
+            "passwords-match",
+            "Passwords do not match",
+            function (value) {
+                return value === this.parent.password;
+            }
+        ),
+
+
 });
+
+
 
 type SignupFormValues = {
     firstName: string;
@@ -95,8 +106,22 @@ export default function Signup() {
             try {
                 setStatus(undefined);
 
-                const result = await signupUser(values);
+                // Compare original passwords before encryption
+                if (values.password !== values.confirmPassword) {
+                    setStatus({
+                        success: false,
+                        message: "Passwords do not match",
+                    });
+                    return;
+                }
 
+                const encryptedPassword = await encryptPassword(values.password);
+
+                const result = await signupUser({
+                    ...values,
+                    password: encryptedPassword,
+                    confirmPassword: encryptedPassword,
+                });
                 console.log("Signup successful:", result);
 
                 setSuccessMessage(
@@ -114,13 +139,12 @@ export default function Signup() {
                     message:
                         error instanceof Error
                             ? error.message
-                            : "Something went wrong",
+                            : "Signup failed",
                 });
             }
         },
 
     });
-
     return (
         <AppBox
             sx={{
@@ -173,6 +197,7 @@ export default function Signup() {
                             <AppTextField
                                 label="First name"
                                 required
+                                fullWidth
                                 {...formik.getFieldProps("firstName")}
                                 error={
                                     formik.touched.firstName &&
@@ -187,6 +212,7 @@ export default function Signup() {
 
                             <AppTextField
                                 label="Middle name (optional)"
+                                fullWidth
                                 {...formik.getFieldProps("middleName")}
                                 error={
                                     formik.touched.middleName &&
@@ -202,6 +228,7 @@ export default function Signup() {
                             <AppTextField
                                 label="Last name"
                                 required
+                                fullWidth
                                 {...formik.getFieldProps("lastName")}
                                 error={
                                     formik.touched.lastName &&
@@ -217,6 +244,7 @@ export default function Signup() {
                             <AppTextField
                                 label="Email address"
                                 required
+                                fullWidth
                                 type="email"
                                 {...formik.getFieldProps("email")}
                                 error={
