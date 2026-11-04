@@ -1,3 +1,4 @@
+
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import { useState } from "react";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -11,20 +12,25 @@ export default function AppTextField({
   label,
   value,
   onChange,
+  onBlur,
+  name,
   sx,
   type,
+  slotProps,
   ...props
 }: AppTextFieldProps) {
-
   const [showPassword, setShowPassword] = useState(false);
 
   const isPasswordField = type === "password";
 
   return (
     <TextField
+      {...props}
       label={label}
+      name={name}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
       type={
         isPasswordField
           ? showPassword
@@ -33,30 +39,22 @@ export default function AppTextField({
           : type
       }
       sx={{ mb: 2, ...sx }}
-      fullWidth
       size="small"
-      {...props}
       slotProps={{
+        ...slotProps,
         input: {
+          ...(typeof slotProps?.input === "object"
+            ? slotProps.input
+            : {}),
           endAdornment: isPasswordField ? (
             <InputAdornment position="end">
               <IconButton
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() =>
-                  setShowPassword((prev) => !prev)
-                }
+                onClick={() => setShowPassword((prev) => !prev)}
                 edge="end"
-                aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <VisibilityOff />
-                ) : (
-                  <Visibility />
-                )}
+                {showPassword ? <VisibilityOff /> : <Visibility />}
               </IconButton>
             </InputAdornment>
           ) : undefined,

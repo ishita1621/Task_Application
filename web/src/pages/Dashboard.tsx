@@ -1,22 +1,44 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import MuiDataGrid from "../components/MuiDataGrid"
 import AddIcon from "@mui/icons-material/Add";
 import CustomizedDialogs from "../components/MuiDialog";
-import { saveTasks, loadData } from "../services/TaskStorage";
 import AppButton from "../components/common/AppButton.js";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import type { Task } from "../types/Task";
+import { createTask } from "../services/TaskApi";
+import { TaskFormData } from "../types/Task";
+import type {
+  TaskPriority,
+  TaskStatus,
+} from "../constants/TaskConstant";
 
+import {
+  BackendTaskPriority,
+  BackendTaskStatus
+} from "../types/Task"
+
+import type { CreateTaskData } from "../types/Task";
+
+// type TaskFormData = {
+//   title: string;
+//   description: string;
+//   assignee: string;
+//   priority: TaskPriority;
+//   status: TaskStatus;
+//   dueDate: Dayjs | null;
+// };
 
 const cardDetails = [
   { title: "Total Tasks", color: "#2563eb" },
-  { title: "Pending Tasks", color: "#d97706" },
+  { title: "Open Tasks", color: "#d97706" },
   { title: "In Progress Tasks", color: "#7c3aed" },
-  { title: "Completed Tasks", color: "#059669" },
+  { title: "Implemented Tasks", color: "#0891b2" },
+  { title: "Re-opened Tasks", color: "#ea580c" },
+  { title: "Closed Tasks", color: "#059669" },
 ];
 
 export default function Dashboard() {
@@ -28,63 +50,91 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     navigate("/login", { replace: true });
   };
 
-  useEffect(() => {
-    const savedTasks = loadData();
-    setTasks(Array.isArray(savedTasks) ? savedTasks : []);
-  }, []);
+  // useEffect(() => {
+  //   const savedTasks = loadData();
+  //   setTasks(Array.isArray(savedTasks) ? savedTasks : []);
+  // }, []);
 
   const totalTasks = tasks.length;
 
-  const completedTasks = tasks.filter(
-    (task) =>
-      task.status?.toLowerCase() === "completed"
+  const openTasks = tasks.filter(
+    (task) => task.status === "OPEN"
   ).length;
 
   const inProgressTasks = tasks.filter(
-    (task) => task.status?.toLowerCase() === "in progress"
+    (task) => task.status === "IN_PROGRESS"
   ).length;
 
-  const pendingTasks = tasks.filter((task) => {
-    const status = task.status?.toLowerCase();
+  const implementedTasks = tasks.filter(
+    (task) => task.status === "IMPLEMENTED"
+  ).length;
 
-    return (
-      status === "pending"
-    );
-  }).length;
+  const reOpenedTasks = tasks.filter(
+    (task) => task.status === "RE_OPENED"
+  ).length;
 
-  const handleTasksChange = (updatedTasks: Task[]) => {
+  const closedTasks = tasks.filter(
+    (task) => task.status === "CLOSED"
+  ).length;
+
+  const handleTasksChange = useCallback((updatedTasks: Task[]) => {
     setTasks(updatedTasks);
-  };
+  }, []);
 
   const taskStats = [
     { ...cardDetails[0], count: totalTasks },
-    { ...cardDetails[1], count: pendingTasks },
+    { ...cardDetails[1], count: openTasks },
     { ...cardDetails[2], count: inProgressTasks },
-    { ...cardDetails[3], count: completedTasks },
+    { ...cardDetails[3], count: implementedTasks },
+    { ...cardDetails[4], count: reOpenedTasks },
+    { ...cardDetails[5], count: closedTasks },
   ];
+
   const handleAddTask = () => {
     setOpenTaskDialog(true);
   };
 
-  const handleSubmit = (task: Task) => {
-    const existingTasks = loadData();
+  const handleSubmit = async (task: TaskFormData) => {
+    try {
+      const priorityMap: Record<TaskPriority, BackendTaskPriority> = {
+        High: "HIGH",
+        Medium: "MEDIUM",
+        Low: "LOW",
+      };
 
-    const currentTasks: Task[] = Array.isArray(existingTasks)
-      ? existingTasks
-      : [];
+      const statusMap: Record<TaskStatus, BackendTaskStatus> = {
+        Open: "OPEN",
+        "In Progress": "IN_PROGRESS",
+        Implemented: "IMPLEMENTED",
+        "Re-opened": "RE_OPENED",
+        Closed: "CLOSED",
+      };
 
-    const updatedTasks = [...currentTasks, task];
+      const payload: CreateTaskData = {
+        title: task.title.trim(),
+        description: task.description.trim(),
+        priority: priorityMap[task.priority],
+        status: statusMap[task.status],
+        dueDate: task.dueDate
+          ? task.dueDate.format("YYYY-MM-DD")
+          : null,
+        assignee: task.assignee,
+      };
 
-    saveTasks(updatedTasks);
-    setTasks(updatedTasks);
-    setRefreshGrid((previous) => previous + 1);
+      await createTask(payload);
 
-    setOpenTaskDialog(false);
-    setSuccessOpen(true);
+      setOpenTaskDialog(false);
+      setRefreshGrid((previous) => previous + 1);
+      setSuccessOpen(true);
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
   };
 
   return (

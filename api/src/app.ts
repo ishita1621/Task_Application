@@ -3,21 +3,23 @@ import cors from "cors";
 import requestLogger from "./middleware/requestLogger";
 import errorHandler from "./middleware/errorHandler";
 import authRoutes from "./routes/authRoutes"
+import taskRoutes from "./routes/taskRoutes";
 
-const app=express();
+const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth",authRoutes)
+app.use("/api/auth", authRoutes)
+app.use("/api/tasks", taskRoutes);
 
 
 app.use(requestLogger);
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
     res.json({
-        sccuess:true,
-        message:"backend Running",
+        sccuess: true,
+        message: "backend Running",
     });
 });
 

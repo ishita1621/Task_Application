@@ -15,4 +15,35 @@ model User {
     email      String   @unique
     password   String
     createdAt  DateTime @default(now())
+    tasks      Task[]
+}
+
+enum TaskPriority {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum TaskStatus {
+    OPEN
+    IN_PROGRESS
+    IMPLEMENTED
+    RE_OPENED
+    CLOSED
+}
+
+model Task {
+    id          String       @id @default(cuid())
+    title       String
+    description String?
+    assignee    String?
+    priority    TaskPriority @default(MEDIUM)
+    status      TaskStatus   @default(OPEN)
+    dueDate     DateTime?
+
+    userId Int
+    user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }

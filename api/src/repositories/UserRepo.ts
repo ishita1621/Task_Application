@@ -1,12 +1,6 @@
 import prisma from "../lib/prisma";
+import { CreateUserData } from "../types/Task";
 
-type CreateUserData = {
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    email: string;
-    password: string;
-};
 
 export async function findUserByEmail(email: string) {
     return prisma.user.findUnique({

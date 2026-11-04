@@ -1,3 +1,4 @@
+
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import AppDialog from "./common/AppDialog";
@@ -9,29 +10,19 @@ import {
 } from "../constants/TaskConstant";
 import type { Dayjs } from "dayjs";
 
-type Task = {
-  id: number;
-  title: string;
-  description: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  dueDate: string | null;
-  assignee: string;
-};
-
 type CustomizedDialogsProps = {
   openTaskDialog: boolean;
   handleClose: () => void;
-  handleSubmit: (task: Task) => void;
+  handleSubmit: (task: TaskFormData) => Promise<void>;
 };
 
-type TaskFormValues = {
+type TaskFormData = {
   title: string;
   description: string;
-  priority: TaskPriority | "";
+  assignee: string;
+  priority: TaskPriority;
   status: TaskStatus;
   dueDate: Dayjs | null;
-  assignee: string;
 };
 
 const taskSchema = Yup.object({
@@ -54,8 +45,7 @@ const taskSchema = Yup.object({
     .required("Status is required"),
 
   assignee: Yup.string()
-    .trim()
-    .required("Assignee is required"),
+    .trim(),
 
   dueDate: Yup.mixed<Dayjs>()
     .nullable()
@@ -72,12 +62,12 @@ export default function CustomizedDialogs({
   handleClose,
   handleSubmit,
 }: CustomizedDialogsProps) {
-  const formik = useFormik<TaskFormValues>({
+  const formik = useFormik<TaskFormData>({
     initialValues: {
       title: "",
       description: "",
-      priority: "",
-      status: "Pending",
+      priority: "Medium",
+      status: "Open",
       dueDate: null,
       assignee: "",
     },
@@ -86,22 +76,21 @@ export default function CustomizedDialogs({
     validateOnBlur: true,
     validateOnChange: true,
 
-    onSubmit: (values, { resetForm }) => {
+    onSubmit: async (values, { resetForm }) => {
       if (!values.priority || !values.dueDate) {
         return;
       }
 
-      const task: Task = {
-        id: Date.now(),
+      const task: TaskFormData = {
         title: values.title.trim(),
         description: values.description.trim(),
         priority: values.priority,
         status: values.status,
-        dueDate: values.dueDate.format("YYYY-MM-DD"),
+        dueDate: values.dueDate,
         assignee: values.assignee.trim(),
       };
 
-      handleSubmit(task);
+      await handleSubmit(task);
       resetForm();
     },
   });
@@ -142,7 +131,7 @@ export default function CustomizedDialogs({
       handleSave={() => {
         void formik.validateForm().then((errors) => {
           if (Object.keys(errors).length === 0) {
-            formik.handleSubmit();
+            void formik.handleSubmit();
           } else {
             formik.setTouched({
               title: true,

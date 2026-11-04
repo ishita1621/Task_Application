@@ -3,12 +3,7 @@ import { createDemoUser } from "./services/AuthStorage.js";
 import AppRoutes from "./routes/AppRoutes.js";
 
 function App() {
-  useEffect(() => {
-    createDemoUser();
-  }, []);
-
-  return <AppRoutes />
-  
+  return <AppRoutes />;
 }
 
 export default App

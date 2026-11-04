@@ -53,17 +53,10 @@ export default function Login() {
                 // Encrypt password before sending it to backend
                 const encryptedPassword = await
                     encryptPassword(values.password);
-
-                // Send encrypted password
                 const result = await loginUser({
                     email: values.email,
                     encryptedPassword,
                 });
-
-                console.log("Login response:", result);
-                console.log("User:", result.user);
-
-
 
                 // Save user details
                 localStorage.setItem("user", JSON.stringify(result.user));
@@ -131,6 +124,7 @@ export default function Login() {
                     <AppTextField
                         label="Email address"
                         required
+                        fullWidth
                         type="email"
                         {...formik.getFieldProps("email")}
                         error={formik.touched.email && Boolean(formik.errors.email)}
@@ -142,6 +136,7 @@ export default function Login() {
                     <AppTextField
                         label="Password"
                         required
+                        fullWidth
                         type="password"
                         {...formik.getFieldProps("password")}
                         error={

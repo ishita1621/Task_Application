@@ -2,18 +2,21 @@ export const PRIORITIES = ["High", "Medium", "Low"] as const;
 
 export type TaskPriority = (typeof PRIORITIES)[number];
 export const STATUSES = [
-  "Pending",
+  "Open",
   "In Progress",
-  "Completed",
+  "Implemented",
+  "Re-opened",
+  "Closed",
 ] as const;
 
 export type TaskStatus = (typeof STATUSES)[number];
-
 export const STATUS_FILTER_OPTIONS = [
   { label: "All Statuses", value: "All" },
-  { label: "Pending", value: "Pending" },
+  { label: "Open", value: "Open" },
   { label: "In Progress", value: "In Progress" },
-  { label: "Completed", value: "Completed" },
+  { label: "Implemented", value: "Implemented" },
+  { label: "Re-opened", value: "Re-opened" },
+  { label: "Closed", value: "Closed" },
 ] as const;
 
 export const PRIORITY_FILTER_OPTIONS = [

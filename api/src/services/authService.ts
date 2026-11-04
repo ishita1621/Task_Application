@@ -1,55 +1,51 @@
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
 import {
     createUser,
     findUserByEmail,
 } from "../repositories/UserRepo";
 
-type SignupData = {
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    email: string;
-    password: string;
-};
+import type { CreateUserData } from "../types/Task";
 
-export async function signupUser(data: SignupData) {
+export async function signupUser(data: CreateUserData) {
+    // Normalize email
     const email = data.email.trim().toLowerCase();
 
-    // Check whether this email is already registered
+    // Check whether the email is already registered
     const existingUser = await findUserByEmail(email);
 
     if (existingUser) {
         throw new Error("EMAIL_ALREADY_EXISTS");
     }
 
-    // Hash the password before storing it
+    // Hash the decrypted password using bcrypt
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    // Save the user through the repository
-    return createUser({
+    // Create user in the database
+    const user = await createUser({
         firstName: data.firstName.trim(),
         middleName: data.middleName?.trim() || undefined,
         lastName: data.lastName.trim(),
         email,
         password: hashedPassword,
     });
-}
 
+    return user;
+}
 
 export async function loginUser(email: string, password: string) {
     // Normalize email
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Find user in database
+    // Find user
     const user = await findUserByEmail(normalizedEmail);
 
-    // Check whether user exists
     if (!user) {
         throw new Error("INVALID_CREDENTIALS");
     }
 
-    // Compare entered password with stored hashed password
+    // Compare entered password with stored bcrypt hash
     const isPasswordValid = await bcrypt.compare(
         password,
         user.password
@@ -59,18 +55,14 @@ export async function loginUser(email: string, password: string) {
         throw new Error("INVALID_CREDENTIALS");
     }
 
-    // Generate JWT after successful authentication
+    // Generate JWT
     const token = jwt.sign(
-        {
-            userId: user.id,
-        },
+        { userId: user.id },
         process.env.JWT_SECRET!,
-        {
-            expiresIn: "1h",
-        }
+        { expiresIn: "1h" }
     );
 
-    // Return user details, without password
+    // Return safe user details (never return password hash)
     return {
         token,
         user: {
